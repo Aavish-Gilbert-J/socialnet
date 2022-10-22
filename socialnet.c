@@ -2,321 +2,367 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include<stdbool.h>
+#include <stdbool.h>
 #define MAX 100
 
-typedef struct node 
+typedef struct node
 {
-    int id; //ID of user
-    int numfren; //number of friends of user
-    char name[MAX]; //name of user
-    int* friends; //friends of user as an array
-    struct node* right;  //user to the right
-    struct node* left; //user to the left
+    int id;             // ID of user
+    int numfren;        // number of friends of user
+    char name[MAX];     // name of user
+    int *friends;       // friends of user as an array
+    struct node *right; // user to the right
+    struct node *left;  // user to the left
 } node;
 
-struct node* retUser(char str[MAX])                                                               //prewritten function
+struct node *retUser(char str[MAX])
 {
     char name[MAX];
     char ID[MAX];
     char strfriends[MAX];
 
-    //copied ID
-    char*token=strtok(str,",");
-    strcpy(ID,token);
+    // copied ID
+    char *token = strtok(str, ",");
+    strcpy(ID, token);
 
-    //copied Name
-    token=strtok(NULL,",");
-    strcpy(name,token);
+    // copied Name
+    token = strtok(NULL, ",");
+    strcpy(name, token);
 
-    //copied friends' ID
-    token=strtok(NULL,",");
-    strcpy(strfriends,token);
-    //printf("%s\n",(strfriends));
+    // copied friends' ID
+    token = strtok(NULL, ",");
+    strcpy(strfriends, token);
+    // printf("%s\n",(strfriends));
 
-    //creating user nodes
-    int id=atoi(ID);
+    // creating user nodes
+    int id = atoi(ID);
     struct node *user = malloc(sizeof(struct node));
-    user->id=id;
-    user->friends=(int*)malloc(MAX * sizeof(int));
-    strcpy(user->name,name);
+    user->id = id;
+    user->friends = (int *)malloc(MAX * sizeof(int));
+    strcpy(user->name, name);
 
-
-    //adding user's friend's IDs
-    token = strtok(strfriends,"|");  
-    int i=0;
-    while( token != NULL ) 
+    // adding user's friend's IDs
+    token = strtok(strfriends, "|");
+    int i = 0;
+    while (token != NULL)
     {
 
-        int temp=atoi(token);
-        user->friends[i]=temp;
+        int temp = atoi(token);
+        user->friends[i] = temp;
         i++;
-        token = strtok(NULL,"|");
+        token = strtok(NULL, "|");
     }
-    user->numfren=i;
-    if(i==0){user->friends[i]=-1;}
+    user->numfren = i;
+    if (i == 0)
+    {
+        user->friends[i] = -1;
+    }
+
     return user;
 }
 
-
-//search for user with id=key
-struct node* search(int key, struct node *users)                                                  //might work- completed
+// search for user with id=key
+struct node *search(int key, struct node *users)
 {
-    if (users == NULL)
-        return NULL;
- 
-    /* first recur on left child */
-    search(key, users->left);
- 
-    /* check if the id matches with the key */
-    if(users->id==key){
-        return users;
-    }
- 
-    /* now recur on right child */
-    search(key, users->right);
-}
- 
-
-int check_user(struct node *root, int id)                                                      //self defined works
-{
-    struct node *curr = root;
-    while(curr != NULL){
-        if(curr->id == id) return 1;
-        if(curr->id > id) curr = curr->right;
-        else curr = curr->left;
-    }
-    if(curr == NULL) return 0;
-}
-
-
-void add_bidirectional_friend(int user_id, struct node *node)                                   //self defined works
-{ 
-    node->friends[node->numfren++] = user_id;
-}
-
-
-//see document for explanattion
-struct node*refineUser(struct node*user, struct node *users)                                     //works
-{
-    while(check_user(users, user->id) == 1){
-        user->id++;
-    }
-    if(user->numfren == 0){
-        user->friends[user->numfren]=-1;
-        user->numfren=0;
-        return(user);
-    }
-    for(int i=0; i<user->numfren; i++){
-        if(search(user->friends[i], users) != NULL){
-            struct node *Node = search(user->friends[i], users);
-            add_bidirectional_friend(user->id, Node);
+    node *p = users;
+    
+    while (p != NULL)
+    {
+        if (p->id == key)   //checking if the node is the key
+        {
+            return p;
+        }
+        else if (key > p->id)     //traversing to the right
+        {
+            p = p->right;
+        }
+        else                      //traversing to the left
+        {
+            p = p->left;                  
         }
     }
+    return NULL;
+}
+
+// see document for explanattion
+struct node *refineUser(struct node *user, struct node *users)
+{
+
+    user->left = NULL;
+    user->right = NULL;
+    
+    int num = 0;
+    
+    while (num != 1){
+        if (search(user->id, users) != NULL){
+            (user->id)++;
+        }
+        else{
+            num = 1;
+        }
+     }
+     
+    int count = 0;
+    
+    while (count != user->numfren){
+    
+        node *temp = search(user->friends[count], users);
+        
+        if (temp != NULL){
+            count++;
+            temp->friends[temp->numfren] = user->id;
+            (temp->numfren)++;
+        }
+        
+        else{
+        
+            user->friends[user->numfren] = 0;
+
+            for(int x = count; x < user->numfren; x++){
+                user->friends[x] = user->friends[x + 1];
+            }
+            
+            (user->numfren)--;
+        }
+    }
+    
+    if (count == 0){
+        user->friends[count] = -1;
+    }
+
     return user;
 }
 
-//insert user with id
-struct node* insertUser(struct node*root,int id,struct node*user)                                //might work- completed
+// insert user with id
+struct node *insertUser(struct node *root, int id, struct node *user)
 {
-   if(root==NULL)
-   {
-    struct node* temp = (struct node*)malloc(sizeof(struct node));
-    temp = user;
-    return temp;
-   }
+    node *p = root;
+    
+    if (root == NULL){
+        root = user;
+    }
+    
+    else{
+    
+        while (1){
+        
+            if (id >= p->id){
 
-   if (id < root->id)
-        root->left = insertUser(root->left, id, user);
-    else if (id > root->id)
-        root->right = insertUser(root->right, id, user);
-
-    printf("inserted");
- 
-    /* return the (unchanged) node pointer */
+                if (p->right == NULL){
+                    p->right = user;
+                    break;
+                }
+                
+                else{
+                    p = p->right;
+                }
+            }
+            
+            else if (id < p->id){
+            
+                if (p->left == NULL){
+                    p->left = user;
+                    break;
+                }
+                
+                else{
+                    p = p->left;
+                }
+            }
+        }
+    }
+    
     return root;
 }
 
-//prints friends list  
-void friends(int id, struct node *users)                                                         //might work - completed
+// prints friends list
+void friends(int id, struct node *users)
 {
-    if(users!=NULL)
-    {
-        /* first recur on left child */
-        friends(id, users->left);
+    node *temp = search(id, users);
     
-        /* check if the id matches with the key */
-        if(users->id == id)
-        {
-            int i;
-            for(i=0; i < users->numfren; i++)
+    if (temp != NULL){
+    
+        if (temp->numfren == 0){
+            printf("%d\n", -1);
+        }
+        
+        else{
+        
+            for (int x = 0; x < temp->numfren; x++)
             {
-                printf("%d", users->friends[i]);
+                printf("%d\n", temp->friends[x]);
             }
         }
+    }
     
-        /* now recur on right child */
-        friends(id, users->right);
-
+    else{
+        printf("%d\n", -1);
     }
 }
 
 //find child node with minimum value (inorder successor) - helper to delete node
-struct node *minValueNode(struct node *node) {                                                   //might work - completed
-    struct node *p;
-    p=node->right;
-    while(p->left!=NULL) p=p->left;
-    return p;
-}
+ struct node *minValueNode(struct node *node) 
+ {
+   struct node* temp=node->right;
+   
+   while(temp -> left!=NULL)
+   {
+    temp = temp->left;
+   }
+   
+   return temp;
+ }
 
-//deletes itself from its friend's nodes
-struct node*deleteFriends(int key, struct node*users)                                            //might work - completed
+// deletes itself from its friend's nodes
+struct node *deleteFriends(int key, struct node *users)
 {
-    if (users == NULL)
-    return NULL;
- 
-    /* first recur on left child */
-    deleteFriends(key, users->left);
- 
-    /* check if the id matches with the key */
-    int i;
-    for(i=0; i < users->numfren; i++){
-        if(users->friends[i] == key){
-            users->friends[i]=-1;
+    node *p = search(key, users);
+    if (p == NULL)
+        return users;
+
+    for (int x = 0; x < p->numfren; x++)
+    {
+        node *q = search(p->friends[x], users);
+        
+        for (int y = 0; y < q->numfren; y++){
+        
+            if (q->friends[y] == key){
+            
+                q->friends[q->numfren] = 0;
+                
+                for (int z = y; z < q->numfren; z++){
+                
+                    q->friends[z] = q->friends[z + 1];
+                }
+                
+                --q->numfren;
+                
+                break;
+            }
+            
+            else{
+                y++;
+            }
         }
     }
- 
-    /* now recur on right child */
-    deleteFriends(key, users->right);
+
+    return users;
 }
 
 // Deleting a node
-struct node *deleteNode(struct node *root, int key) {                                            //might work- completed
-   struct node *p;
+struct node *deleteNode(struct node *root, int key)
+{
 
-    if(root==NULL) return root;
-
-    if(key < root->id) 
-    {
-        root->left = deleteNode(root->left, key);
+    if (root == NULL){
+        printf("empty!!");
     }
+    
     else
     {
-        if(key > root->id)
-        {
+        if (key > root->id){
             root->right = deleteNode(root->right, key);
+        }
+        
+        else if (key < root->id){
+            root->left = deleteNode(root->left, key);
+        }
+        
+        
+        else if (root->left == NULL){
+            node *q = root->right;
+            free(root);
+            return q;
+        }
+        
+        else if (root->right == NULL){
+            node *q = root->left;
+            free(root);
+            return q;
+        }
+        
+        
+        else{
+            node *q=minValueNode(root);
+            root->id = q->id;
+            strcpy(root->name, q->name);
+            root->right = deleteNode(root->right, q->id);
         }
     }
 
-    if(root->right==NULL)
-    {
-        p=root->left;
-        free(root);
-        return p;    
-    }
-
-    else if(root->left==NULL){
-        p=root->right;
-        free(root);
-        return p;
-    }
-
-    else{
-        // p=root->right;
-        // while(p->left!=NULL) p=p->left;
-
-        p=minValueNode(root);
-        root->id=p->id;                                 //try root=p if there is an error to preserve the array info
-        root->right=deleteNode(root->right, p->id);
-    }
-
     return root;
-    
 }
 
-//Print USER's IDs in ascending order
-void printInOrder(node* myusers)                                                                 //might work- completed
+// Print USER's IDs in ascending order
+void printInOrder(node *myusers)
 {
-    if (myusers == NULL)
-        return;
- 
-    /* first recur on left child */
-    printInOrder(myusers->left);
- 
-    /* then print the data of node */
-    printf("%d ", myusers->id);
- 
-    /* now recur on right child */
-    printInOrder(myusers->right);
+    if (myusers !=NULL){
+        printInOrder(myusers->left);
+        
+        printf("%d %s\n", myusers->id, myusers->name);
+        
+        printInOrder(myusers->right);
+    }
 }
 
 
 int main(int argc, char **argv)
 {
-    node *users=NULL;   
-    while(1)
+    node *users = NULL;
+    while (1)
     {
 
         int opt, id;
         fflush(stdin);
-        scanf("%d",&opt);
+        scanf("%d", &opt);
         char str[MAX];
         switch (opt)
         {
-            case 1:
-      
-                scanf("%s",str);
-                struct node*tbins=retUser(str);
-                tbins=refineUser(tbins, users);
-                users=insertUser(users,tbins->id,tbins);
-                break;
+        case 1:
 
-            case 2:
-           
-                scanf("%d", &id);
-                deleteFriends(id, users);
-                users=deleteNode(users, id);
-                break;
+            scanf("%s", str);
+            struct node *tbins = retUser(str);
+            tbins = refineUser(tbins, users);
 
-            case 3:
-        
-                scanf("%d", &id);
-                node* result=search(id,users);
-                if(result==NULL) 
-                    printf("USER NOT IN TREE.\n");
-                else{
-                    printf("%d\n",result->id);
-                }
-                break;
+            users = insertUser(users, tbins->id, tbins);
+            break;
 
-            case 4:
-                scanf("%d", &id);
-                friends(id, users);
-                break;
+        case 2:
 
-            case 5:
-                printInOrder(users);
-                break;
+            scanf("%d", &id);
+            deleteFriends(id, users);
+            users = deleteNode(users, id);
 
-            case 6:
-                exit(0);
-                break;
+            break;
 
-            default: 
-                printf("Wrong input! \n");
-                break;
+        case 3:
+
+            scanf("%d", &id);
+            node *result = search(id, users);
+            if (result == NULL)
+                printf("USER NOT IN TREE.\n");
+            else
+            {
+                printf("%d\n", result->id);
+            }
+            break;
+
+        case 4:
+            scanf("%d", &id);
+            friends(id, users);
+            break;
+
+        case 5:
+            printInOrder(users);
+            break;
+
+        case 6:
+            exit(0);
+            break;
+
+        default:
+            printf("Wrong input! \n");
+            break;
         }
-
     }
     return 0;
 }
-
-
-
-
-
-
-
-
-// friends
-// print inorder
